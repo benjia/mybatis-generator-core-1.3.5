@@ -5,13 +5,18 @@ import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
 import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.xml.Attribute;
+import org.mybatis.generator.api.dom.xml.Element;
+import org.mybatis.generator.api.dom.xml.TextElement;
+import org.mybatis.generator.api.dom.xml.XmlElement;
+import org.mybatis.generator.config.PropertyRegistry;
 import org.mybatis.generator.internal.util.StringUtility;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
- * Github github.com/orange1438
+ * Github github.com/benjia
  *
  * @author orange1438
  *         2016/10/11 23:10
@@ -21,6 +26,8 @@ public class MybatisServicePlugin extends PluginAdapter {
     private FullyQualifiedJavaType slf4jLogger;
     private FullyQualifiedJavaType slf4jLoggerFactory;
     private FullyQualifiedJavaType serviceType;
+    private FullyQualifiedJavaType voType;
+    private FullyQualifiedJavaType controllerType;
     private FullyQualifiedJavaType daoType;
     private FullyQualifiedJavaType interfaceType;
     private FullyQualifiedJavaType pojoType;
@@ -31,6 +38,8 @@ public class MybatisServicePlugin extends PluginAdapter {
     private FullyQualifiedJavaType returnType;
     private String servicePack;
     private String serviceImplPack;
+    private String voPackage;
+    private String controllerPackage;
     private String project;
     private String pojoUrl;
 
@@ -47,6 +56,7 @@ public class MybatisServicePlugin extends PluginAdapter {
     private boolean enableUpdateByExampleSelective = false;
     private boolean enableUpdateByPrimaryKey = false;
     private boolean enableUpdateByPrimaryKeySelective = false;
+    private Element e;
 
     public MybatisServicePlugin() {
         super();
@@ -95,6 +105,8 @@ public class MybatisServicePlugin extends PluginAdapter {
             this.enableUpdateByExample = StringUtility.isTrue(enableUpdateByExample);
 
         servicePack = properties.getProperty("targetPackage");
+        voPackage = properties.getProperty("voPackage");
+        controllerPackage=properties.getProperty("controllerPackage");
         serviceImplPack = properties.getProperty("implementationPackage");
         project = properties.getProperty("targetProject");
 
@@ -107,25 +119,124 @@ public class MybatisServicePlugin extends PluginAdapter {
         return true;
     }
 
+    /**
+     * resultMap 字段增加注释
+     * @param element
+     * @param introspectedTable
+     * @return
+     */
+    @Override
+    public boolean sqlMapResultMapWithoutBLOBsElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
+        List<Element> elements = element.getElements();
+        Iterator<Element> i = elements.iterator();
+        while (i.hasNext()){
+            e = i.next();
+            XmlElement ex = e instanceof XmlElement ? ((XmlElement) e) : null;
+            List<Attribute> attributes = ex.getAttributes();
+            String columName = "";
+            for (Attribute attr:attributes
+                 ) {
+                if ("column".equals(attr.getName())){
+                    columName = attr.getValue();
+                    break;
+                }
+            }
+            IntrospectedColumn column = introspectedTable.getColumn(columName);
+            StringBuffer sb = new StringBuffer();
+            sb.append("<!--");
+            if ("id".equals(column.getActualColumnName())){
+                sb.append("主键id");
+            }else {
+                sb.append(column.getRemarks());
+            }
+            sb.append("-->");
+            TextElement text = new TextElement(sb.toString());
+            ex.addElement(text);
+        }
+        this.context.getCommentGenerator().addComment(element);
+        return super.sqlMapResultMapWithoutBLOBsElementGenerated(element, introspectedTable);
+    }
+
+    @Override
+    public boolean sqlMapInsertSelectiveElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
+        return false;
+    }
+
+    @Override
+    public boolean sqlMapSelectAllElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
+        return false;
+    }
+
+    @Override
+    public boolean sqlMapUpdateByPrimaryKeySelectiveElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
+        return false;
+    }
+
+    @Override
+    public boolean clientInsertSelectiveMethodGenerated(Method method, Interface interfaze, IntrospectedTable introspectedTable) {
+        return false;
+    }
+
+    @Override
+    public boolean clientSelectAllMethodGenerated(Method method, Interface interfaze, IntrospectedTable introspectedTable) {
+        return false;
+    }
+
+    @Override
+    public boolean clientUpdateByPrimaryKeySelectiveMethodGenerated(Method method, Interface interfaze, IntrospectedTable introspectedTable) {
+        return false;
+    }
+
+
+    /**
+     * 去除不必要的batch sql
+     * @param element
+     * @param introspectedTable
+     * @return
+     */
+    @Override
+    public boolean sqlMapInsertElementGenerated(XmlElement element, IntrospectedTable introspectedTable) {
+        if (element.getName().equals("insert")){
+            List<Attribute> attList = element.getAttributes();
+            for (Attribute attr: attList
+                 ) {
+                if (attr.getValue().equals("insertBatch")){
+                    return  false;
+                }
+            }
+        }
+        return super.sqlMapInsertElementGenerated(element, introspectedTable);
+    }
+
+
+
+
     @Override
     public List<GeneratedJavaFile> contextGenerateAdditionalJavaFiles(IntrospectedTable introspectedTable) {
         List<GeneratedJavaFile> files = new ArrayList<GeneratedJavaFile>();
         String table = introspectedTable.getBaseRecordType();
         String tableName = table.replaceAll(this.pojoUrl + ".", "");
-        interfaceType = new FullyQualifiedJavaType(servicePack + "." + tableName + "Service");
+        String tableActulName = tableName.substring(0,tableName.length()-2);
+        //service interface
+        interfaceType = new FullyQualifiedJavaType(servicePack + "." + tableActulName + "Service");
 
-        // mybatis
+        // dao interface
         daoType = new FullyQualifiedJavaType(introspectedTable.getMyBatis3JavaMapperType());
 
         // logger.info(toLowerCase(daoType.getShortName()));
-        serviceType = new FullyQualifiedJavaType(serviceImplPack + "." + tableName + "ServiceImpl");
-
+        //serviceImpl class
+        serviceType = new FullyQualifiedJavaType(serviceImplPack + "." + tableActulName + "ServiceImpl");
+        //pojo class
         pojoType = new FullyQualifiedJavaType(pojoUrl + "." + tableName);
-
-        pojoCriteriaType = new FullyQualifiedJavaType(pojoUrl + "." + "Criteria");
-        listType = new FullyQualifiedJavaType("java.util.List");
+        //vo class
+        voType = new FullyQualifiedJavaType(voPackage+ "." + tableActulName  + "VO");
+        controllerType= new FullyQualifiedJavaType(controllerPackage+"."+tableActulName+"Controller");
+//      pojoCriteriaType = new FullyQualifiedJavaType(pojoUrl + "." + "Criteria");
+//      listType = new FullyQualifiedJavaType("java.util.List");
         Interface interface1 = new Interface(interfaceType);
         TopLevelClass topLevelClass = new TopLevelClass(serviceType);
+        TopLevelClass dtoClass = new TopLevelClass(voType);
+        TopLevelClass controllerClass = new TopLevelClass(controllerType);
         // 导入必要的类
         addImport(interface1, topLevelClass);
 
@@ -133,9 +244,91 @@ public class MybatisServicePlugin extends PluginAdapter {
         addService(interface1, introspectedTable, tableName, files);
         // 实现类
         addServiceImpl(topLevelClass, introspectedTable, tableName, files);
-        addLogger(topLevelClass);
+        // VO
+        addVO(dtoClass,introspectedTable,files);
+        //controller
+        addController(controllerClass,tableActulName,introspectedTable,files);
+//        addLogger(topLevelClass);
 
         return files;
+    }
+
+    //生成controller
+    private void addController(TopLevelClass controllerClass,String tableActualName, IntrospectedTable introspectedTable, List<GeneratedJavaFile> files) {
+        controllerClass.addAnnotation("@RequestMapping(value=\"/"+toLowerCase(tableActualName)+"\",method=RequestMethod.POST)");
+        controllerClass.addAnnotation("@RestController");
+        controllerClass.addAnnotation("@Api(tags=\""+introspectedTable.getRemarks()+"\")");
+        controllerClass.addImportedType("org.springframework.web.bind.annotation.RequestMapping");
+        controllerClass.addImportedType("org.springframework.web.bind.annotation.RequestMethod");
+        controllerClass.addImportedType("javax.annotation.Resource");
+        controllerClass.addImportedType("org.springframework.web.bind.annotation.RestController");
+        controllerClass.addImportedType("io.swagger.annotations.Api");
+        controllerClass.addImportedType(interfaceType);
+        Field field = new Field(tableActualName+"Service",interfaceType);
+        field.setVisibility(JavaVisibility.PRIVATE);
+        field.addAnnotation("@Resource");
+        controllerClass.addField(field);
+        GeneratedJavaFile file = new GeneratedJavaFile(controllerClass, project, context.getJavaFormatter());
+        files.add(file);
+    }
+
+    protected String getDateString() {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    }
+
+    /**
+     * 普通PO model对象增加继承MybatisBasePO
+     * @param topLevelClass     该类的实例就是表示当前正在生成的类的DOM结构
+     * @param introspectedTable 代表的runtime环境，包含了所有context中的配置，一般从这个类中去查询生成对象的一些规则；
+     * @return
+     */
+    @Override
+    public boolean modelBaseRecordClassGenerated(TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+        String basePO = "com.raiden.cfds.manager.bean.po.MybatisBasePO";
+        topLevelClass.addImportedType(basePO);
+        FullyQualifiedJavaType basePOClass = new FullyQualifiedJavaType(basePO);
+        topLevelClass.setSuperClass(basePOClass);
+        return super.modelBaseRecordClassGenerated(topLevelClass, introspectedTable);
+    }
+
+    /**
+     * 添加dto
+     * @param dtoClass
+     * @param introspectedTable
+     * @param files
+     */
+    private void addVO(TopLevelClass dtoClass, IntrospectedTable introspectedTable,List<GeneratedJavaFile> files) {
+        dtoClass.setVisibility(JavaVisibility.PUBLIC);
+        dtoClass.addJavaDocLine("/**");
+        dtoClass.addJavaDocLine("* "+introspectedTable.getRemarks());
+        dtoClass.addJavaDocLine("*@author "+this.context.getCommentGeneratorConfiguration().getProperty(PropertyRegistry.COMMENT_GENERATOR_AUTHOR));
+        dtoClass.addJavaDocLine("*@Date "+getDateString());
+        dtoClass.addJavaDocLine("*/");
+        dtoClass.addAnnotation("@Data");
+        dtoClass.addAnnotation("@ApiModel");
+        dtoClass.addImportedType("lombok.Data");
+        dtoClass.addImportedType("io.swagger.annotations.ApiModelProperty");
+        dtoClass.addImportedType("io.swagger.annotations.ApiModel");
+        List<IntrospectedColumn>  columns = introspectedTable.getAllColumns();
+        for (IntrospectedColumn column:columns
+             ) {
+            //遍历生成字段
+            Field field = new Field(column.getJavaProperty(),column.getFullyQualifiedJavaType());
+            field.setVisibility(JavaVisibility.PRIVATE);
+            field.addJavaDocLine("/**");
+            if ("id".equals(column.getActualColumnName())){
+                field.addJavaDocLine("主键id");
+            }else {
+                field.addJavaDocLine(column.getRemarks());
+            }
+            field.addJavaDocLine("* "+column.getRemarks());
+            field.addJavaDocLine("*/");
+            field.addAnnotation("@ApiModelProperty(name=\""+column.getJavaProperty()+"\""+",value=\""+column.getRemarks()+"\")");
+            dtoClass.addField(field);
+        }
+        GeneratedJavaFile file = new GeneratedJavaFile(dtoClass, project, context.getJavaFormatter());
+        files.add(file);
+
     }
 
     /**
@@ -147,8 +340,8 @@ public class MybatisServicePlugin extends PluginAdapter {
     protected void addService(Interface interface1, IntrospectedTable introspectedTable, String tableName, List<GeneratedJavaFile> files) {
 
         interface1.setVisibility(JavaVisibility.PUBLIC);
-
-        // 添加方法
+        Method method = null;
+        /*// 添加方法
         Method method = countByExample(introspectedTable, tableName);
         method.removeAllBodyLines();
         interface1.addMethod(method);
@@ -159,7 +352,7 @@ public class MybatisServicePlugin extends PluginAdapter {
 
         method = selectByExample(introspectedTable, tableName);
         method.removeAllBodyLines();
-        interface1.addMethod(method);
+        interface1.addMethod(method);*/
 
         if (enableDeleteByPrimaryKey) {
             method = getOtherInteger("deleteByPrimaryKey", introspectedTable, tableName, 2);
@@ -217,17 +410,19 @@ public class MybatisServicePlugin extends PluginAdapter {
         topLevelClass.setVisibility(JavaVisibility.PUBLIC);
         // 设置实现的接口
         topLevelClass.addSuperInterface(interfaceType);
-
+        String tableActulName = tableName.substring(0,tableName.length()-2);
         if (enableAnnotation) {
-            topLevelClass.addAnnotation("@Service");
+            topLevelClass.addAnnotation("@Service(\""+toLowerCase(tableActulName)+"Service\")");
+            topLevelClass.addAnnotation("@Slf4j");
+            topLevelClass.addImportedType("lombok.extern.slf4j.Slf4j");
             topLevelClass.addImportedType(service);
         }
         // 添加引用dao
-        addField(topLevelClass, tableName);
+        addField(topLevelClass);
         // 添加方法
-        topLevelClass.addMethod(countByExample(introspectedTable, tableName));
-        topLevelClass.addMethod(selectByPrimaryKey(introspectedTable, tableName));
-        topLevelClass.addMethod(selectByExample(introspectedTable, tableName));
+//        topLevelClass.addMethod(countByExample(introspectedTable, tableName));
+//        topLevelClass.addMethod(selectByPrimaryKey(introspectedTable, tableName));
+//        topLevelClass.addMethod(selectByExample(introspectedTable, tableName));
 
         /**
          * type 的意义 pojo 1 ;key 2 ;example 3 ;pojo+example 4
@@ -265,9 +460,9 @@ public class MybatisServicePlugin extends PluginAdapter {
     /**
      * 添加字段
      *
-     * @param topLevelClass
+             * @param topLevelClass
      */
-    protected void addField(TopLevelClass topLevelClass, String tableName) {
+    protected void addField(TopLevelClass topLevelClass) {
         // 添加 dao
         Field field = new Field();
         field.setName(toLowerCase(daoType.getShortName())); // 设置变量名
@@ -464,28 +659,6 @@ public class MybatisServicePlugin extends PluginAdapter {
     }
 
     /**
-     * 添加字段
-     *
-     * @param topLevelClass
-     */
-    protected void addField(TopLevelClass topLevelClass) {
-        // 添加 success
-        Field field = new Field();
-        field.setName("success"); // 设置变量名
-        field.setType(FullyQualifiedJavaType.getBooleanPrimitiveInstance()); // 类型
-        field.setVisibility(JavaVisibility.PRIVATE);
-        addComment(field, "执行结果");
-        topLevelClass.addField(field);
-        // 设置结果
-        field = new Field();
-        field.setName("message"); // 设置变量名
-        field.setType(FullyQualifiedJavaType.getStringInstance()); // 类型
-        field.setVisibility(JavaVisibility.PRIVATE);
-        addComment(field, "消息结果");
-        topLevelClass.addField(field);
-    }
-
-    /**
      * 添加方法
      */
     protected void addMethod(TopLevelClass topLevelClass) {
@@ -575,16 +748,16 @@ public class MybatisServicePlugin extends PluginAdapter {
      * 导入需要的类
      */
     private void addImport(Interface interfaces, TopLevelClass topLevelClass) {
-        interfaces.addImportedType(pojoType);
-        interfaces.addImportedType(pojoCriteriaType);
-        interfaces.addImportedType(listType);
+//        interfaces.addImportedType(pojoType);
+//        interfaces.addImportedType(pojoCriteriaType);
+//        interfaces.addImportedType(listType);
         topLevelClass.addImportedType(daoType);
         topLevelClass.addImportedType(interfaceType);
-        topLevelClass.addImportedType(pojoType);
-        topLevelClass.addImportedType(pojoCriteriaType);
-        topLevelClass.addImportedType(listType);
-        topLevelClass.addImportedType(slf4jLogger);
-        topLevelClass.addImportedType(slf4jLoggerFactory);
+//        topLevelClass.addImportedType(pojoType);
+//        topLevelClass.addImportedType(pojoCriteriaType);
+//        topLevelClass.addImportedType(listType);
+//        topLevelClass.addImportedType(slf4jLogger);
+//        topLevelClass.addImportedType(slf4jLoggerFactory);
         if (enableAnnotation) {
             topLevelClass.addImportedType(service);
             topLevelClass.addImportedType(autowired);

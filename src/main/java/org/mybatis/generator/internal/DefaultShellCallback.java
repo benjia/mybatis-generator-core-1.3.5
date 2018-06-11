@@ -68,7 +68,6 @@ public class DefaultShellCallback implements ShellCallback {
         // format (with dots instead of slashes). The sub directory will be
         // created
         // if it does not already exist
-
         File project = new File(targetProject);
         if (!project.isDirectory()) {
             warnings.add(getString("Warning.9", targetProject));

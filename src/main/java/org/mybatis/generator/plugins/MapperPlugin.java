@@ -15,8 +15,6 @@ import java.util.*;
 /**
  * 统一Mapper生成
  *
- * @author orange1438
- *         github: github.com/orange1438
  *         date: 2017/02/19 20:05
  */
 public class MapperPlugin extends PluginAdapter {

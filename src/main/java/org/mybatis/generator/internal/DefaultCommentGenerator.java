@@ -84,7 +84,7 @@ public class DefaultCommentGenerator implements CommentGenerator {
      */
     public void addJavaFileComment(CompilationUnit compilationUnit) {
         // add no file level comments by default
-        compilationUnit.addFileCommentLine("/* https://github.com/orange1438 */");
+//        compilationUnit.addFileCommentLine("/* https://github.com/orange1438 */");
     }
 
     /**
@@ -188,8 +188,8 @@ public class DefaultCommentGenerator implements CommentGenerator {
             return;
         }
         javaElement.addJavaDocLine("/**");
-        javaElement.addJavaDocLine(" * 本文件由 https://github.com/orange1438/mybatis-generator-core-chinese-annotation1.3.5-chinese-annotation 自动生成");
-        //    javaElement.addJavaDocLine(" * 本文件由 橙子 自动生成");
+        //javaElement.addJavaDocLine(" * 本文件由 https://github.com/orange1438/mybatis-generator-core-chinese-annotation1.3.5-chinese-annotation 自动生成");
+        //javaElement.addJavaDocLine(" * 本文件由 橙子 自动生成");
         addJavadocTag(javaElement, false);
         javaElement.addJavaDocLine(" */");
     }
@@ -212,7 +212,7 @@ public class DefaultCommentGenerator implements CommentGenerator {
         if (addRemarkComments && StringUtility.stringHasValue(remarks)) {
             String[] remarkLines = remarks.split(System.getProperty("line.separator"));
             for (String remarkLine : remarkLines) {
-                topLevelClass.addJavaDocLine(" * " + remarkLine + " " + introspectedTable.getFullyQualifiedTable());
+                topLevelClass.addJavaDocLine(" * " + remarkLine + "表" + introspectedTable.getFullyQualifiedTable());
             }
         }
 
@@ -252,12 +252,13 @@ public class DefaultCommentGenerator implements CommentGenerator {
         if (suppressAllComments) {
             return;
         }
+        field.addJavaDocLine("/**");
         // 添加字段注释
         StringBuffer sb = new StringBuffer();
         //对应表中字段的备注(数据库中自己写的备注信息)
         if (introspectedColumn.getRemarks() != null
                 && !introspectedColumn.getRemarks().equals("")) {
-            sb.append("// " + introspectedColumn.getRemarks());
+            sb.append("* "+introspectedColumn.getRemarks());
             if (introspectedColumn.getDefaultValue() != null && !introspectedColumn.getDefaultValue().isEmpty()) {
                 sb.append("  默认：" + introspectedColumn.getDefaultValue());
             }
@@ -265,6 +266,7 @@ public class DefaultCommentGenerator implements CommentGenerator {
         if (sb.length() > 0) {
             field.addJavaDocLine(sb.toString());
         }
+        field.addJavaDocLine("*/");
     }
 
     /* (non-Javadoc)
@@ -520,6 +522,7 @@ public class DefaultCommentGenerator implements CommentGenerator {
     /* (non-Javadoc)
      * @see org.mybatis.generator.api.CommentGenerator#addClassComment(org.mybatis.generator.api.dom.java.InnerClass, org.mybatis.generator.api.IntrospectedTable)
      */
+    @Override
     public void addClassComment(InnerClass innerClass,
                                 IntrospectedTable introspectedTable) {
         // add no document level comments by default
@@ -547,6 +550,7 @@ public class DefaultCommentGenerator implements CommentGenerator {
      * @see org.mybatis.generator.api.CommentGenerator#addClassComment(org.mybatis.generator.api.dom.java.InnerClass, org.mybatis.generator.api.IntrospectedTable, boolean)
      * 删除生成Criteria对象的注释信息的注释
      */
+    @Override
     public void addClassComment(InnerClass innerClass,
                                 IntrospectedTable introspectedTable, boolean markAsDoNotDelete) {
         // add no document level comments by default

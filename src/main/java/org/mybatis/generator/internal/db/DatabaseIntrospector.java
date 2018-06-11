@@ -817,7 +817,6 @@ public class DatabaseIntrospector {
                     }
                 }
 
-                introspectedTable.setRemarks(remarks);
                 introspectedTable.setTableType(tableType);
             }
             closeResultSet(rs);

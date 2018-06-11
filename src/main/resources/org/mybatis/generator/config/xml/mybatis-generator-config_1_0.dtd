@@ -44,7 +44,9 @@
         <!ELEMENT properties EMPTY>
         <!ATTLIST properties
                 resource CDATA #IMPLIED
-                url CDATA #IMPLIED>
+                url CDATA #IMPLIED
+                urlT CDATA #IMPLIED
+                >
 
         <!--
           The context element is used to describe a context for generating files, and the source

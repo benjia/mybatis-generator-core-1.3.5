@@ -15,7 +15,7 @@ http://mbg.cndocs.tk/
     <properties resource="test/generatorConfig.properties"/>
 
     <!-- 指定数据连接驱动jar地址 -->
-    <classPathEntry location="${jdbc.mybatisGenerator.classPath}"/>
+    <!--<classPathEntry location="${jdbc.mybatisGenerator.classPath}"/>-->
 
     <!-- 一个数据库一个context -->
     <context id="testTables" targetRuntime="MyBatis3">
@@ -37,34 +37,38 @@ http://mbg.cndocs.tk/
         <!--插件 ：用来给Java模型生成equals和hashcode方法-->
         <!--<plugin type="org.mybatis.generator.plugins.EqualsHashCodePlugin"/>-->
         <!--插件 ：用来为生成的Java模型类添加序列化接口-->
-        <plugin type="org.mybatis.generator.plugins.SerializablePlugin"/>
+        <!--<plugin type="org.mybatis.generator.plugins.SerializablePlugin"/>-->
         <!--插件 ：生成的Java模型创建一个toString方法-->
         <plugin type="org.mybatis.generator.plugins.ToStringPlugin"/>
         <plugin type="org.mybatis.generator.plugins.RenameExampleClassPlugin">
             <property name="searchString" value="Example$"/>
             <property name="replaceString" value="Criteria"/>
         </plugin>
-
+        <!--<plugin type="tk.mybatis.mapper.generator.MapperPlugin">
+        <property name="mappers" value="com.mapperss"/>
+        </plugin>-->
         <!-- 统一Mapper 接口 -->
-        <plugin type="org.mybatis.generator.plugins.MapperPlugin">
-            <property name="interfaceName" value="IMapper"/>
+        <!--<plugin type="org.mybatis.generator.plugins.MapperPlugin">
+            <property name="interfaceName" value="IMapper"/>-->
             <!-- 是否删除Mapper类里的方法，默认删除-->
-            <property name="deleteMethod" value="true"/>
-        </plugin>
+            <!--<property name="deleteMethod" value="true"/>-->
+        <!--</plugin>-->
 
         <!-- service层插件 -->
         <plugin type="org.mybatis.generator.plugins.MybatisServicePlugin">
             <property name="targetPackage" value="${service.package}"/>
             <property name="implementationPackage" value="${service.package.impl}"/>
+            <property name="voPackage" value="${vo.package}"/>
+            <property name="controllerPackage" value="${controller.package}"/>
             <property name="targetProject" value="${service.path}"/>
-            <property name="enableInsert" value="true"/>
-            <property name="enableUpdateByExampleSelective" value="true"/>
-            <property name="enableInsertSelective" value="true"/>
-            <property name="enableUpdateByPrimaryKey" value="true"/>
-            <property name="enableDeleteByPrimaryKey" value="true"/>
-            <property name="enableDeleteByExample" value="true"/>
-            <property name="enableUpdateByPrimaryKeySelective" value="true"/>
-            <property name="enableUpdateByExample" value="true"/>
+            <property name="enableInsert" value="false"/>
+            <property name="enableUpdateByExampleSelective" value="false"/>
+            <property name="enableInsertSelective" value="false"/>
+            <property name="enableUpdateByPrimaryKey" value="false"/>
+            <property name="enableDeleteByPrimaryKey" value="false"/>
+            <property name="enableDeleteByExample" value="false"/>
+            <property name="enableUpdateByPrimaryKeySelective" value="false"/>
+            <property name="enableUpdateByExample" value="false"/>
         </plugin>
 
         <!-- 注释 -->
@@ -79,7 +83,7 @@ http://mbg.cndocs.tk/
 
             <!-- 自己添加的参数属性:数据表字段的get、set方法是否添加final关键字,默认为true -->
             <property name="addMethodFinal" value="true"/>
-            <property name="author" value="orange1438"/>
+            <property name="author" value="Mybatis Generator"/>
         </commentGenerator>
 
         <!--数据库连接的信息：驱动类、连接地址、用户名、密码 -->
@@ -141,7 +145,14 @@ http://mbg.cndocs.tk/
         <!-- 指定生成的数据库表 -->
         <!-- domainObjectName：指定生成的实体类的文件名 -->
         <!--<table tableName="sys_user" domainObjectName="User"/>-->
-        <table tableName="test" domainObjectName="Test"/>
+        <table tableName="user_base" domainObjectName="UserBasePO"
+               mapperName="UserBaseDao"
+               enableCountByExample="false" enableUpdateByExample="false"
+               enableDeleteByExample="false" enableSelectByExample="false"
+               selectByExampleQueryId="false"
+               enableDeleteByPrimaryKey="false"
+
+        />
 
         <!-- 其他需求：有些表的字段需要指定java类型 -->
         <!--<table schema="management_system" tableName="s_user"-->

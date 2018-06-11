@@ -36,8 +36,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
 
@@ -108,16 +111,16 @@ public class MyBatisGeneratorConfigurationParser {
 
         String resource = attributes.getProperty("resource");
         String url = attributes.getProperty("url");
+        String urlT = attributes.getProperty("urlT");
+//        if (!stringHasValue(resource)
+//                && !stringHasValue(url)) {
+//            throw new XMLParserException(getString("RuntimeError.14"));
+//        }
 
-        if (!stringHasValue(resource)
-                && !stringHasValue(url)) {
-            throw new XMLParserException(getString("RuntimeError.14"));
-        }
-
-        if (stringHasValue(resource)
-                && stringHasValue(url)) {
-            throw new XMLParserException(getString("RuntimeError.14"));
-        }
+//        if (stringHasValue(resource)
+//                && stringHasValue(url)) {
+//            throw new XMLParserException(getString("RuntimeError.14"));
+//        }
 
         //统一把resource/URL转成URL；
         URL resourceUrl;
@@ -129,8 +132,12 @@ public class MyBatisGeneratorConfigurationParser {
                     throw new XMLParserException(getString(
                             "RuntimeError.15", resource));
                 }
-            } else {
+            } else if(stringHasValue(url)){
                 resourceUrl = new URL(url);
+            }else{
+                urlT = new File("").getCanonicalFile()+urlT;
+                File file = new File(urlT);
+                resourceUrl = new URL("file:///"+file.getAbsolutePath());
             }
 
             //从URL加载properties文件并载入；

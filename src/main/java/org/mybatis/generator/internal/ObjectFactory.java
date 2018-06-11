@@ -381,7 +381,7 @@ public class ObjectFactory {
         IntrospectedTable answer = createIntrospectedTableForValidation(context);
         answer.setFullyQualifiedTable(table);
         answer.setTableConfiguration(tableConfiguration);
-
+        answer.setRemarks(table.getRemark());
         return answer;
     }
 
